@@ -29,15 +29,10 @@ require("./schema/Article");
 require("./schema/Profile");
 
 const mongoUri =
-	process.env.MONGODB_URI ||
+	(process.env.MONGODB_URI && process.env.MONGODB_URI.trim()) ||
 	`mongodb+srv://dbAdmin:${encodeURIComponent(
 		process.env.MONGODB_ADMIN_PASSWORD
 	)}@cluster0.vkbul.mongodb.net/?retryWrites=true&w=majority`;
-
-mongoose
-	.connect(mongoUri)
-	.then((res) => console.log("Connected to DB"))
-	.catch((err) => console.log(err));
 
 require("./services/passport");
 
@@ -69,9 +64,21 @@ app.get("/favicon.ico", (req, res) => {
 	res.sendFile("./frontend/build/favicon.ico");
 });
 
-// Get the port from the environment, i.e., Heroku sets it
-const port = process.env.PORT || 4200;
-const server = app.listen(port, () => {
-	const addr = server.address();
-	console.log(`Server listening at http://${addr.address}:${addr.port}`);
-});
+const startServer = async () => {
+	try {
+		await mongoose.connect(mongoUri);
+		console.log("Connected to DB");
+
+		// Get the port from the environment, i.e., Heroku/Render sets it
+		const port = process.env.PORT || 4200;
+		const server = app.listen(port, () => {
+			const addr = server.address();
+			console.log(`Server listening at http://${addr.address}:${addr.port}`);
+		});
+	} catch (err) {
+		console.error("Failed to connect to DB:", err);
+		process.exit(1);
+	}
+};
+
+startServer();
