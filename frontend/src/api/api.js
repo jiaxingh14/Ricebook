@@ -3,6 +3,32 @@ import axios from "axios";
 const apiUrl = process.env.REACT_APP_API_URL || "https://ricebook-tjgu.onrender.com/";
 export const hostUrl = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
 
+const getStoredSid = () => {
+	if (typeof window === "undefined") {
+		return "";
+	}
+
+	return window.localStorage.getItem("sid") || "";
+};
+
+axios.interceptors.request.use((config) => {
+	const sid = getStoredSid();
+	if (sid) {
+		config.headers = config.headers || {};
+		config.headers.Authorization = `Bearer ${sid}`;
+	}
+
+	return config;
+});
+
+axios.interceptors.response.use((response) => {
+	if (response.data && response.data.sid && typeof window !== "undefined") {
+		window.localStorage.setItem("sid", response.data.sid);
+	}
+
+	return response;
+});
+
 /**
  * Login an user.
  * @param {*} username

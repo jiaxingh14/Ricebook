@@ -14,6 +14,19 @@ const cookieKey = "sid";
 
 const clientUrl = process.env.CLIENT_URL || "https://ruthless-jail.surge.sh";
 
+const getBearerSid = (req) => {
+	const authHeader = req.get("authorization");
+	if (!authHeader) {
+		return "";
+	}
+
+	const [scheme, token] = authHeader.split(" ");
+	return /^Bearer$/i.test(scheme) ? token : "";
+};
+
+const getSessionId = (req) =>
+	(req.cookies && req.cookies[cookieKey]) || getBearerSid(req);
+
 /**
  * log in a user.
  * @param {*} req
@@ -55,7 +68,7 @@ const login = async (req, res) => {
 			sameSite: "none",
 			secure: true,
 		});
-		let msg = { username: username, result: "success" };
+		let msg = { username: username, result: "success", sid: sid };
 		res.send(msg);
 	} else {
 		console.warn("login failed: password incorrect ->", username);
@@ -70,7 +83,7 @@ const login = async (req, res) => {
  * @param {*} res
  */
 const logout = (req, res) => {
-	let sid = req.cookies.sid;
+	let sid = getSessionId(req);
 	let redisCheck = redis.hdel("sessions", sid, (err, data) => {
 		if (err) {
 			return res.status(500).send("Internal server error");
@@ -152,7 +165,7 @@ const register = async (req, res) => {
 			secure: true,
 		});
 
-		let msg = { result: "success", username: username };
+		let msg = { result: "success", username: username, sid: sid };
 		res.status(200).send(msg);
 	} catch (err) {
 		return res.status(500).send("Internal server error");
@@ -201,15 +214,15 @@ const password = async (req, res) => {
  */
 const isLoggedIn = (req, res, next) => {
 	// likely didn't install cookie parser
-	if (!req.cookies) {
-		console.warn("Auth check failed: request has no cookies object");
+	if (!req.cookies && !req.get("authorization")) {
+		console.warn("Auth check failed: request has no cookies or authorization");
 		return res.sendStatus(401);
 	}
 
-	let sid = req.cookies.sid;
+	let sid = getSessionId(req);
 	// no sid for cookie key
 	if (!sid) {
-		console.warn("Auth check failed: missing sid cookie");
+		console.warn("Auth check failed: missing sid cookie or bearer token");
 		return res.sendStatus(401);
 	}
 
@@ -271,7 +284,7 @@ module.exports = (app) => {
 				secure: true,
 			});
 
-			res.redirect(`${clientUrl}/main`);
+			res.redirect(`${clientUrl}/main?sid=${sid}`);
 		}
 	);
 

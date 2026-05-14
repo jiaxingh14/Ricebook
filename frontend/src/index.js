@@ -14,6 +14,21 @@ import { Provider } from "react-redux";
 
 import configureStore from "./store";
 
+const params = new URLSearchParams(window.location.search);
+const sid = params.get("sid");
+if (sid) {
+	window.localStorage.setItem("sid", sid);
+	params.delete("sid");
+	const search = params.toString();
+	window.history.replaceState(
+		null,
+		"",
+		`${window.location.pathname}${search ? `?${search}` : ""}${
+			window.location.hash
+		}`
+	);
+}
+
 const store = configureStore;
 
 ReactDOM.render(
