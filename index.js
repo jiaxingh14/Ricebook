@@ -28,12 +28,14 @@ require("./schema/User");
 require("./schema/Article");
 require("./schema/Profile");
 
+const mongoUri =
+	process.env.MONGODB_URI ||
+	`mongodb+srv://dbAdmin:${encodeURIComponent(
+		process.env.MONGODB_ADMIN_PASSWORD
+	)}@cluster0.vkbul.mongodb.net/?retryWrites=true&w=majority`;
+
 mongoose
-	.connect(
-		`mongodb+srv://dbAdmin:${encodeURIComponent(
-			process.env.MONGODB_ADMIN_PASSWORD
-		)}@cluster0.vkbul.mongodb.net/?retryWrites=true&w=majority`
-	)
+	.connect(mongoUri)
 	.then((res) => console.log("Connected to DB"))
 	.catch((err) => console.log(err));
 
