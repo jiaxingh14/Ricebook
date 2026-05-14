@@ -40,6 +40,14 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+app.use((req, res, next) => {
+	res.on("finish", () => {
+		if (req.path !== "/" && req.path !== "/favicon.ico") {
+			console.log(`${req.method} ${req.path} -> ${res.statusCode}`);
+		}
+	});
+	next();
+});
 app.use(
 	session({
 		secret: "doNotGuessTheSecret",

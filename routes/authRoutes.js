@@ -23,9 +23,11 @@ const clientUrl = process.env.CLIENT_URL || "https://ruthless-jail.surge.sh";
 const login = async (req, res) => {
 	let username = req.body.username;
 	let password = req.body.password;
+	console.log("login attempt ->", username);
 
 	// supply username and password
 	if (!username || !password) {
+		console.warn("login failed: missing username or password");
 		res.status(400).send("Bad input");
 		return;
 	}
@@ -33,6 +35,7 @@ const login = async (req, res) => {
 	let user = await User.findOne({ username: username }).exec();
 
 	if (!user) {
+		console.warn("login failed: user not registered ->", username);
 		res.status(401).send("User not registered");
 		return;
 	}
@@ -55,6 +58,7 @@ const login = async (req, res) => {
 		let msg = { username: username, result: "success" };
 		res.send(msg);
 	} else {
+		console.warn("login failed: password incorrect ->", username);
 		res.status(401).send("Login failed: password incorrect");
 	}
 	return;
@@ -198,22 +202,26 @@ const password = async (req, res) => {
 const isLoggedIn = (req, res, next) => {
 	// likely didn't install cookie parser
 	if (!req.cookies) {
+		console.warn("Auth check failed: request has no cookies object");
 		return res.sendStatus(401);
 	}
 
 	let sid = req.cookies.sid;
 	// no sid for cookie key
 	if (!sid) {
+		console.warn("Auth check failed: missing sid cookie");
 		return res.sendStatus(401);
 	}
 
 	// let user = sessionMap[sid];
 	let redisCheck = redis.hmget("sessions", sid, (err, data) => {
 		if (err) {
+			console.error("Auth check failed: Redis lookup error:", err);
 			return res.sendStatus(401);
 		}
 		// no username mapped to sid
 		if (data instanceof Array && data.length === 0) {
+			console.warn("Auth check failed: Redis returned no session data");
 			return res.sendStatus(401);
 		}
 		let user = data[0];
@@ -221,11 +229,13 @@ const isLoggedIn = (req, res, next) => {
 			req.user = JSON.parse(user);
 			next();
 		} else {
+			console.warn("Auth check failed: session id not found in Redis");
 			return res.sendStatus(401);
 		}
 	});
 
 	if (!redisCheck) {
+		console.error("Auth check failed: Redis lookup command was not queued");
 		return res.sendStatus();
 	}
 };
