@@ -1,6 +1,11 @@
 const md5 = require("md5");
 const mongoose = require("mongoose");
 const redis = require("redis").createClient(process.env.REDIS_URL);
+
+redis.on("error", (err) => {
+	console.error("Redis connection error:", err);
+});
+
 const User = mongoose.model("users");
 const Profile = mongoose.model("profiles");
 const passport = require("passport");

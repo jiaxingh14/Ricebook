@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const hostUrl = "https://final-ricebookserver-jh135.herokuapp.com/";
-// export const hostUrl = "http://localhost:4200/";
+const apiUrl = process.env.REACT_APP_API_URL || "https://ricebook-tjgu.onrender.com/";
+export const hostUrl = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
 
 /**
  * Login an user.
