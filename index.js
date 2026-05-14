@@ -1,20 +1,28 @@
 const cookieParser = require("cookie-parser");
 const express = require("express");
 const mongoose = require("mongoose");
-// const cors = require("cors");
+const cors = require("cors");
 
 const session = require("express-session");
 const passport = require("passport");
 require("passport-google-oauth").OAuth2Strategy;
 
-// const clientUrl = "https://final-ricebookserver-jh135.herokuapp.com/";
-// const clientUrl = "http://localhost:3000";
-// fontend origin
-// const corsOptions = {
-// 	origin: `${clientUrl}`,
-// 	credentials: true,
-// 	exposedHeaders: ["set-cookie"],
-// };
+const allowedOrigins = [
+	process.env.CLIENT_URL,
+	"https://ruthless-jail.surge.sh",
+	"http://localhost:3000",
+].filter(Boolean);
+
+const corsOptions = {
+	origin: (origin, callback) => {
+		if (!origin || allowedOrigins.includes(origin)) {
+			return callback(null, true);
+		}
+
+		return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+	},
+	credentials: true,
+};
 
 require("./schema/User");
 require("./schema/Article");
@@ -32,9 +40,9 @@ mongoose
 require("./services/passport");
 
 const app = express();
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
-// app.use(cors(corsOptions));
 app.use(
 	session({
 		secret: "doNotGuessTheSecret",

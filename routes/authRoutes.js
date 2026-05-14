@@ -7,8 +7,7 @@ const passport = require("passport");
 
 const cookieKey = "sid";
 
-const clientUrl = "https://final-ricebookserver-jh135.herokuapp.com/";
-// const clientUrl = "http://localhost:3000";
+const clientUrl = process.env.CLIENT_URL || "https://ruthless-jail.surge.sh";
 
 /**
  * log in a user.
